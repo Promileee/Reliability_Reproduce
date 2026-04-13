@@ -15,7 +15,7 @@ class UnifiedNetwork(nn.Module):
         # 负责提取底层通用的状态特征 S_n = (X_n^1, X_n^2, n)
         # ==========================================
         self.shared_fc1 = nn.Linear(state_dim, 128)
-        self.shared_fc2 = nn.Linear(128, 128)
+        self.shared_fc2 = nn.Linear(128, 128) # 删掉一层
         
         # ==========================================
         # 2. 策略输出头 (Actor Head - Output layer)
