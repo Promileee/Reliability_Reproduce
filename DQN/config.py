@@ -53,6 +53,6 @@ class Config:
     TARGET_UPDATE_FREQ = 2_000  # 目标网络更新频率 (Steps)
     EPSILON_START = 1.0       # 初始探索率
     EPSILON_END = 0.03        # 最小探索率
-    EPSILON_DECAY = 15000     # 探索率衰减步数
+    EPSILON_DECAY = 30_000     # 探索率衰减步数
     
     REWARD_SCALE = 100.0      # DQN 奖励缩放因子 (可根据收敛情况微调)
