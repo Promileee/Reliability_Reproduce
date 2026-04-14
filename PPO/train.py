@@ -75,9 +75,9 @@ def train():
     np.save(reward_path, reward_history)
     print(f"奖励历史数据已保存至 {reward_path}")
 
-    plot_learning_curve(reward_path, run_dir, window_size=50)
+    plot_learning_curve(reward_path, run_dir, window_size=1000)
 
-    test(run_dir=run_dir, episodes=300)
+    test(run_dir=run_dir, episodes=1000)
 
 def plot_learning_curve(file_path, run_dir, window_size=50):
     """
@@ -105,7 +105,7 @@ def plot_learning_curve(file_path, run_dir, window_size=50):
     plt.grid(True, linestyle='--', alpha=0.6)
     
     # 绘制原始波动的奖励曲线
-    plt.plot(x_raw, rewards, color='lightsteelblue', alpha=0.5, label='Raw Episode Reward')
+    plt.plot(x_raw, rewards, color='lightsteelblue', alpha=0.5, marker='.', linestyle='none', markersize=2, label='Raw Episode Reward')
     
     # 绘制平滑后的奖励曲线
     plt.plot(x_sma, sma, color='royalblue', linewidth=2.5, label=f'Moving Average (Window={window_size})')

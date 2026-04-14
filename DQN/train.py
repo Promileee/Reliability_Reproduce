@@ -21,7 +21,7 @@ def plot_learning_curve(file_path, run_dir, window_size=50):
 
     plt.figure(figsize=(10, 6), dpi=150)
     plt.grid(True, linestyle='--', alpha=0.6)
-    plt.plot(x_raw, rewards, color='lightsteelblue', alpha=0.5, label='Raw Episode Reward')
+    plt.plot(x_raw, rewards, color='lightsteelblue', alpha=0.5, marker='.', linestyle='none', markersize=2, label='Raw Episode Reward')
     plt.plot(x_sma, sma, color='royalblue', linewidth=2.5, label=f'Moving Average (Window={window_size})')
     plt.title('DQN Learning Curve - Reward Convergence', fontsize=14, fontweight='bold')
     plt.xlabel('Training Episodes', fontsize=12)
@@ -92,7 +92,7 @@ def train():
         episodes += 1
 
         # 打印日志
-        if episodes % 50 == 0:
+        if episodes % 500 == 0:
             avg_reward = np.mean(reward_history[-50:])
             eps = agent.config.EPSILON_END + (agent.config.EPSILON_START - agent.config.EPSILON_END) * \
                   np.exp(-1. * agent.steps_done / agent.config.EPSILON_DECAY)
@@ -107,10 +107,10 @@ def train():
     reward_path = os.path.join(run_dir, "reward_history.npy")
     np.save(reward_path, reward_history)
 
-    plot_learning_curve(reward_path, run_dir, window_size=50)
+    plot_learning_curve(reward_path, run_dir, window_size=100)
 
     # 训练完自动测试
-    test(run_dir=run_dir, episodes=300)
+    test(run_dir=run_dir, episodes=1000)
 
 if __name__ == "__main__":
     train()

@@ -89,7 +89,7 @@ class UAVEnvironment:
     def _calc_failure_probs(self, delta_t):
         """
         退回到论文公式(10)-(13)的原始逻辑：
-        按照子系统内部的部件之间结构关系为并联关系处理
+        按照子系统内部的部件之间结构关系处理
         """
         p_fail_E11 = self._calc_ig_cdf(delta_t, self.mu_tilde[0], self.sigma_tilde[0], self.config.L_THRESHOLDS[0], self.current_X[0])
         p_fail_E21 = self._calc_ig_cdf(delta_t, self.mu_tilde[1], self.sigma_tilde[1], self.config.L_THRESHOLDS[1], self.current_X[1])
@@ -97,6 +97,7 @@ class UAVEnvironment:
         
         p_payload_fail = p_fail_E11
 
+        # 完全按照原逻辑处理
         p_transport_fail = p_fail_E21 * p_fail_E22 
         
         return p_payload_fail, p_transport_fail
@@ -118,63 +119,59 @@ class UAVEnvironment:
             # 首先计算救援过程中运输子系统是否会失效
             _, p_sys_fail_rescue = self._calc_failure_probs(rescue_time)
             
-            # 使用概率模拟真实发生的情况 (也可以在强化学习中直接使用期望奖励，这里采用期望奖励以降低方差)
-            # 根据公式(16): Q(S_n, DA) = -c_m - c_f * P_rs
+            # 使用期望奖励以降低方差，根据公式(16): Q(S_n, DA) = -c_m - c_f * P_rs
             reward = -self.config.C_M - self.config.C_F * p_sys_fail_rescue
             done = True
             
         elif action == 1: # DC: 继续任务 (Continue)
-            # 扣除单次检测成本
+            # 1. 扣除单次检测成本
             reward -= self.config.C_I
             
             # 计算下一次检测间隔(delta)内的失效概率
             p_payload_fail, p_sys_fail_delta = self._calc_failure_probs(self.config.DELTA)
             
-            # 随机模拟组件退化状态 (蒙特卡洛抽样)
+            # ====== 基于论文公式 (17) 的概率期望奖励 ======
+            # a. 计算若载荷失效引发强制救援，在救援过程中的系统失效概率 (公式 17 中的 Prs)
+            next_rescue_time = self._phi((self.current_n + 1) * self.config.DELTA)
+            _, p_sys_fail_rescue_after_payload_fail = self._calc_failure_probs(next_rescue_time)
+            
+            # b. 系统在下个 delta_t 内直接失效的期望惩罚
+            reward -= p_sys_fail_delta * (self.config.C_F + self.config.C_M)
+            
+            # c. 载荷在下个 delta_t 内失效但系统幸存，触发强制救援的期望惩罚
+            reward -= (1 - p_sys_fail_delta) * p_payload_fail * (
+                self.config.C_M + self.config.C_F * p_sys_fail_rescue_after_payload_fail
+            )
+            # ==========================================================
+            
+            # 2. 随机模拟组件退化状态 (仅用于推进 MDP 的物理状态 S_n，不触发离散奖励)
             for i in range(self.config.K):
                 # 增量服从正态分布
                 delta_x = np.random.normal(self.mu_tilde[i] * self.config.DELTA, 
                                            self.sigma_tilde[i] * np.sqrt(self.config.DELTA))
                 self.current_X[i] += delta_x 
             
-            # 检查是否实际发生失效 (基于抽样结果或概率判定，这里采用状态阈值判定)
+            # 3. 判定物理状态是否进入吸收态以终结回合 (仅改变 done)
             if self.current_X[0] >= self.config.L_THRESHOLDS[0]:
                 self.is_mission_payload_failed = True
+                done = True
                 
             if self.current_X[1] >= self.config.L_THRESHOLDS[1] and self.current_X[2] >= self.config.L_THRESHOLDS[2]:
                  self.is_system_failed = True
-
-            # 如果在这步系统坠毁了
-            if self.is_system_failed:
-                reward -= (self.config.C_F + self.config.C_M)
-                done = True
-            
-            # 如果载荷失效了，但系统没坠毁
-            elif self.is_mission_payload_failed:
-                 # 载荷失效触发强制 Abort (后续由 Action Mask 处理，但这里如果发生了，意味着任务失败)
-                 # 由于载荷失效，接下来的状态其实相当于必须选择DA。
-                 # 为了简化环境逻辑，我们可以直接在此处结算强制返航的收益并结束 Episode。
-                 next_rescue_time = (self.current_n + 1) * self.config.DELTA
-                 next_rescue_time = self._phi(next_rescue_time)
-                 _, p_sys_fail_rescue_after_payload_fail = self._calc_failure_probs(next_rescue_time)
-                 
-                 reward -= self.config.C_M # 任务失败惩罚
-                 reward -= self.config.C_F * p_sys_fail_rescue_after_payload_fail # 预期系统失效惩罚
                  done = True
-                 
-            else:
-                # 平稳度过这个间隔，更新时间步
+
+            # 4. 如果没有由于越界结束，推进时间并判断是否到达最后阶段
+            if not done:
                 self.current_n += 1
                 
                 # 检查是否完成了任务执行阶段 (到达 N步)
                 if self.current_n >= self.max_steps:
-                    # 此时必须选择返航了 (相当于完成了任务)
-                    # 获得完成任务的收益
-                    reward += self.config.R_M
-                    
-                    # 结算安全返航阶段的预期失效风险
+                    # 对应论文公式 (20)：到达最后一步，基于概率结算任务成功的期望收益与返航阶段的风险
+                    prob_success = (1 - p_sys_fail_delta) * (1 - p_payload_fail)
                     _, p_sys_fail_return = self._calc_failure_probs(self.config.T2)
-                    reward -= self.config.C_F * p_sys_fail_return
+                    
+                    # 加上任务成功的期望奖励，扣除返航时的期望坠毁惩罚
+                    reward += prob_success * (self.config.R_M - self.config.C_F * p_sys_fail_return)
                     
                     done = True
 
