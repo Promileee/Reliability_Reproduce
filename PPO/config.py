@@ -16,7 +16,7 @@ class Config:
     L_THRESHOLDS = np.array([7.5, 12.0, 13.0]) 
     
     DELTA = 1.0       # 单次检测间隔时间 (delta)
-    T1 = 25.0         # 任务执行阶段时长
+    T1 = 22.0         # 任务执行阶段时长
     T2 = 3.0          # 返航阶段时长
     T_TOTAL = T1 + T2 # 总任务时长 (25)
 
@@ -77,9 +77,9 @@ class Config:
     CLIP_EPSILON = 0.2   # PPO 截断范围 (e / clip range)
     C1_ENTROPY = 0.01    # 熵正则化系数 (c1)
     C2_VALUE = 0.5       # 价值函数损失系数 (c2)
-    LR = 3e-4            # 统一网络学习率
+    LR = 5e-3            # 统一网络学习率
     BATCH_SIZE = 32      # 批量大小 (b)
     TRAIN_EPOCHS = 10    # 每次迭代中网络的更新次数 (Z)
-    MAX_TRAIN_STEPS = 200_000 # 最大训练迭代次数 (I)
+    MAX_TRAIN_STEPS = 50_000 # 最大训练迭代次数 (I)
     UPDATE_TIMESTEPS = 256 # 每多少时间步更新一次网络 (N)
-    REWARD_SCALE = 1000.0 # 奖励缩放因子 (scale)
+    REWARD_SCALE = 1.0 # 奖励缩放因子 (scale)

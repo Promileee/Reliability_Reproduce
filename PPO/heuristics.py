@@ -65,12 +65,12 @@ if __name__ == "__main__":
     
     # Policy 1: 固定比例阈值 
     # (例如 0.8 表示任意部件退化量达到自身失效阈值的 80% 即中止)
-    user_ra0 = 0.4  
+    user_ra0 = 0.9  
     
     # Policy 2: 多维独立阈值 
     # (针对不同部件设定不同的绝对退化量阈值。这里暂以 L_THRESHOLDS 的特定比例为例，你可以改成任意绝对数值)
     L = env_main.config.L_THRESHOLDS
-    user_custom_thresholds = np.array([L[0] * 0.4, L[1] * 0.5, L[2] * 0.5]) 
+    user_custom_thresholds = np.array([L[0] * 0.9, L[1] * 0.9, L[2] * 0.9]) 
     
     # 评估回合数 (建议 1000 - 5000 次)
     eval_episodes = 1000 

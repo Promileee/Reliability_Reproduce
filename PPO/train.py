@@ -75,7 +75,7 @@ def train():
     np.save(reward_path, reward_history)
     print(f"奖励历史数据已保存至 {reward_path}")
 
-    plot_learning_curve(reward_path, run_dir, window_size=1000)
+    plot_learning_curve(reward_path, run_dir, window_size=100)
 
     test(run_dir=run_dir, episodes=1000)
 

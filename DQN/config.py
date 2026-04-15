@@ -51,8 +51,8 @@ class Config:
     # ==========================================
     # 4. 深度强化学习算法超参数 (DQN Hyperparameters)
     # ==========================================
-    GAMMA = 0.99              # 折扣因子 (gamma)
-    LR = 3e-4                 # 学习率
+    GAMMA = 1.0              # 折扣因子 (gamma)
+    LR = 3e-2                 # 学习率
     BATCH_SIZE = 32           # 批量大小
     MAX_TRAIN_STEPS = 200_000  # 最大训练步数
     
@@ -61,6 +61,6 @@ class Config:
     TARGET_UPDATE_FREQ = 2048  # 目标网络更新频率 (Steps)
     EPSILON_START = 1.0       # 初始探索率
     EPSILON_END = 0.05        # 最小探索率
-    EPSILON_DECAY = 10_000     # 探索率衰减步数
+    EPSILON_DECAY = 20_000     # 探索率衰减步数
     
-    REWARD_SCALE = 100.0      # DQN 奖励缩放因子 (可根据收敛情况微调)
+    REWARD_SCALE = 10.0      # DQN 奖励缩放因子 (可根据收敛情况微调)
